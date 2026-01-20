@@ -1,5 +1,13 @@
 import { addBtnListeners } from './cartService.js'
-import { getProducts } from '../../controllers/productsController.js'
+
+// ===== Product Fetching =====
+
+async function getProducts(filters = {}) {
+  const queryParams = new URLSearchParams(filters)
+  const res = await fetch(`/api/products?${queryParams}`)
+  return await res.json()
+}
+
 // ===== Rendering products =====
 
 export function renderProducts(products) {
