@@ -1,5 +1,6 @@
 import { getDBConnection } from '../db/db.js'
 
+/* ADD TO CART */
 export async function addToCart(req, res) {
  const db = await getDBConnection()
 
@@ -23,6 +24,8 @@ export async function addToCart(req, res) {
 
 }
 
+
+/* GET CART COUNT */
 export async function getCartCount(req, res) {
   const db = await getDBConnection()
 
@@ -32,6 +35,8 @@ export async function getCartCount(req, res) {
 }  
 
 
+
+/* GET ALL */
 export async function getAll(req, res) {
 
   const db = await getDBConnection()
@@ -42,6 +47,7 @@ export async function getAll(req, res) {
 }  
 
 
+/* DELETE ITEM */
 export async function deleteItem(req, res) {
 
     const db = await getDBConnection()
@@ -64,6 +70,8 @@ export async function deleteItem(req, res) {
   
 }
 
+
+/* DELETE ALL */
 export async function deleteAll(req, res) {
 
   const db = await getDBConnection()
