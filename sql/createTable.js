@@ -32,7 +32,7 @@ async function createTable() {
        email TEXT NOT NULL,
        username TEXT NOT NULL,
        password TEXT NOT NULL,
-       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        UNIQUE(email, username)
         )
         `)
