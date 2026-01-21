@@ -12,18 +12,20 @@ async function createTable() {
     })
 
     await db.exec(`
-        CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        artist TEXT NOT NULL,
-        price REAL NOT NULL,
-        image TEXT NOT NULL,
-        year INTEGER,
-        genre TEXT,
-        stock INTEGER
+        CREATE TABLE products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            artist TEXT NOT NULL,
+            price REAL NOT NULL,
+            image TEXT NOT NULL,
+            year INTEGER,
+            genre TEXT,
+            stock INTEGER,
+            UNIQUE(title, artist, year)
         )
-        `)
-        await db.close()
-        console.log('Table products created')
+    `);
+
+    console.log('Table products created with UNIQUE constraint');
+    await db.close();
 }
 createTable()

@@ -17,7 +17,7 @@ export async function seedTable() {
 
         for (const { title, artist, price, image, year, genre, stock } of vinyl) {
             await db.run(`
-        INSERT INTO products (title, artist, price, image, year, genre, stock )
+        INSERT OR IGNORE INTO products (title, artist, price, image, year, genre, stock )
         VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [title, artist, price, image, year, genre, stock]
             )
