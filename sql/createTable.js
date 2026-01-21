@@ -12,7 +12,7 @@ async function createTable() {
     })
 
     await db.exec(`
-        CREATE TABLE products (
+        CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             artist TEXT NOT NULL,
@@ -25,7 +25,19 @@ async function createTable() {
         )
     `);
 
-    console.log('Table products created with UNIQUE constraint');
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+       name TEXT NOT NULL,
+       email TEXT NOT NULL,
+       username TEXT NOT NULL,
+       password TEXT NOT NULL,
+       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+       UNIQUE(email, username)
+        )
+        `)
+
+    console.log('Table products and users created with UNIQUE constraint');
     await db.close();
 }
 createTable()
