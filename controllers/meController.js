@@ -10,7 +10,7 @@ export async function getCurrentUser(req, res) {
       
     }
 
-    const user = await db.get('SELECT name FROM users WHERE id = ?', [req.session.userId])
+    const user = await db.query('SELECT name FROM users WHERE id = $1', [req.session.userId])
 
     res.json({ isLoggedIn: true, name: user.name})
 

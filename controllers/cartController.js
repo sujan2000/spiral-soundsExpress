@@ -12,12 +12,12 @@ export async function addToCart(req, res) {
 
  const userId = req.session.userId
 
- const existing = await db.get('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, productId])
+ const existing = await db.query('SELECT * FROM cart_items WHERE user_id = $1 AND product_id = $2', [userId, productId])
 
  if (existing) {
-  await db.run('UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?', [existing.id])
+  await db.query('UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?', [existing.id])
  } else {
-  await db.run('INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, 1)', [userId, productId])
+  await db.query('INSERT INTO cart_items (user_id, product_id, quantity) VALUES ($1, $2, 1)', [userId, productId])
  }
 
  res.json({ message: 'Added to cart' })
@@ -29,7 +29,7 @@ export async function addToCart(req, res) {
 export async function getCartCount(req, res) {
   const db = await getDBConnection()
 
-  const result = await db.get(`SELECT SUM(quantity) AS totalItems FROM cart_items WHERE user_id = ?`, [req.session.userId])
+  const result = await db.query(`SELECT SUM(quantity) AS totalItems FROM cart_items WHERE user_id = $1`, [req.session.userId])
 
   res.json({ totalItems: result.totalItems || 0 })
 }  
@@ -41,7 +41,7 @@ export async function getAll(req, res) {
 
   const db = await getDBConnection()
 
-  const items = await db.all(`SELECT ci.id AS cartItemId, ci.quantity, p.title, p.artist, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = ?`, [req.session.userId]) 
+  const items = await db.query(`SELECT ci.id AS cartItemId, ci.quantity, p.title, p.artist, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = $1`, [req.session.userId]) 
 
   res.json({ items: items})
 }  
@@ -58,13 +58,13 @@ export async function deleteItem(req, res) {
       return res.status(400).json({error: 'Invalid item ID'})
     }
 
-    const item = await db.get('SELECT quantity FROM cart_items WHERE id = ? AND user_id = ?', [itemId, req.session.userId])
+    const item = await db.query('SELECT quantity FROM cart_items WHERE id = $1 AND user_id = $2', [itemId, req.session.userId])
 
     if (!item) {
       return res.status(400).json({error: 'Item not found'})
     }
 
-    await db.run('DELETE FROM cart_items WHERE id = ? AND user_id = ?', [itemId, req.session.userId])
+    await db.query('DELETE FROM cart_items WHERE id = $1 AND user_id = $2', [itemId, req.session.userId])
 
     res.status(204).send()
   
@@ -76,7 +76,7 @@ export async function deleteAll(req, res) {
 
   const db = await getDBConnection()
 
-  await db.run('DELETE FROM cart_items WHERE user_id = ?', [req.session.userId])
+  await db.query('DELETE FROM cart_items WHERE user_id = $1', [req.session.userId])
 
   res.status(204).send()
   

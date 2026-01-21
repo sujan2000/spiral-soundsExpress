@@ -35,7 +35,7 @@ export async function registerUser(req, res) {
 
     const db = await getDBConnection()
 
-    const existing = await db.get('SELECT id FROM users WHERE email = ? OR username = ?', [email, username])
+    const existing = await db.query('SELECT id FROM users WHERE email = ? OR username = ?', [email, username])
 
     if (existing) {
       return res.status(400).json({ error: 'Email or username already in use.' })
@@ -43,7 +43,7 @@ export async function registerUser(req, res) {
 
     const hashed = await bcrypt.hash(password, 10)
 
-    const result = await db.run('INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)', [name, email, username, hashed])
+    const result = await db.query('INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)', [name, email, username, hashed])
 
     req.session.userId = result.lastID
 
@@ -72,7 +72,7 @@ export async function loginUser(req, res) {
   try {
     const db = await getDBConnection()
 
-    const user = await db.get('SELECT * FROM users WHERE username = ?', [username])
+    const user = await db.query('SELECT * FROM users WHERE username = ?', [username])
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' })

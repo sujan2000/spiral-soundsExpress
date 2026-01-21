@@ -1,33 +1,28 @@
 
 
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
-import path from 'node:path'
-
+import { getDBConnection } from "../db/db.js";
 
 async function createTable() {
-    const db = await open({
-        filename: path.join('database.db'),
-        driver: sqlite3.Database
-    })
+    const db = await getDBConnection()
 
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            artist TEXT NOT NULL,
-            price REAL NOT NULL,
-            image TEXT NOT NULL,
-            year INTEGER,
-            genre TEXT,
-            stock INTEGER,
-            UNIQUE(title, artist, year)
-        )
-    `);
+    await db.query(`
+    CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        artist TEXT NOT NULL,
+        price REAL NOT NULL,
+        image TEXT NOT NULL,
+        year INTEGER,
+        genre TEXT,
+        stock INTEGER,
+        UNIQUE(title, artist, year)
+    )
+`);
 
-    await db.exec(`
+
+    await db.query(`
         CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+       id SERIAL PRIMARY KEY,
        name TEXT NOT NULL,
        email TEXT NOT NULL,
        username TEXT NOT NULL,
@@ -37,9 +32,9 @@ async function createTable() {
         )
         `);
 
-    await db.exec(`
+    await db.query(`
             CREATE TABLE IF NOT EXISTS cart_items (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              id SERIAL PRIMARY KEY,
               user_id INTEGER NOT NULL,
               product_id INTEGER NOT NULL,
               quantity INTEGER NOT NULL DEFAULT 1,
@@ -49,6 +44,5 @@ async function createTable() {
             `);
 
     console.log('Table products, users and cart_items created with UNIQUE constraint');
-    await db.close();
 }
 createTable()
