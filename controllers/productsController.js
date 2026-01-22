@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import 'dotenv/config';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase } from '../db/db.js';
 
 // GET /api/products/genres
 export async function getGenres(req, res) {
@@ -13,16 +7,14 @@ export async function getGenres(req, res) {
       .from('products')
       .select('genre');
 
-    if (error) {
-      console.error('Supabase error:', error.message);
-      return res.status(500).json({ error: 'Failed to fetch genres' });
-    }
+    if (error) throw error;
 
     // Remove duplicates & nulls
     const genres = [...new Set(data.map(g => g.genre).filter(Boolean))];
 
     res.json(genres);
   } catch (err) {
+    console.error('Error fetching genres:', err.message);
     res.status(500).json({ error: 'Failed to fetch genres', details: err.message });
   }
 }
@@ -39,21 +31,18 @@ export async function getProducts(req, res) {
     }
 
     if (search) {
-      const searchPattern = `%${search}%`;
       query = query.or(
-        `title.ilike.${searchPattern},artist.ilike.${searchPattern},genre.ilike.${searchPattern}`
+        `title.ilike.%${search}%,artist.ilike.%${search}%,genre.ilike.%${search}%`
       );
     }
 
     const { data: products, error } = await query;
 
-    if (error) {
-      console.error('Supabase error:', error.message);
-      return res.status(500).json({ error: 'Failed to fetch products' });
-    }
+    if (error) throw error;
 
     res.json(products);
   } catch (err) {
+    console.error('Error fetching products:', err.message);
     res.status(500).json({ error: 'Failed to fetch products', details: err.message });
   }
 }

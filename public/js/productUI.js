@@ -1,17 +1,16 @@
 import { addBtnListeners } from './cartService.js'
-
-// ===== Product Fetching =====
-
-async function getProducts(filters = {}) {
-  const queryParams = new URLSearchParams(filters)
-  const res = await fetch(`/api/products?${queryParams}`)
-  return await res.json()
-}
+import { getProducts } from './productService.js'
 
 // ===== Rendering products =====
 
 export function renderProducts(products) {
   const albumsContainer = document.getElementById('products-container')
+  
+  if (!products || products.length === 0) {
+    albumsContainer.innerHTML = '<p class="no-products">No products found.</p>'
+    return
+  }
+
   const cards = products.map((album) => {
     return `
       <div class="product-card">
@@ -32,9 +31,18 @@ export function renderProducts(products) {
 // ===== Handling filtering =====
 
 export async function applySearchFilter() {
-  const search = document.getElementById('search-input').value.trim()
-  const filters = {}
-  if (search) filters.search = search
-  const products = await getProducts(filters)
-  renderProducts(products)
+  try {
+    const search = document.getElementById('search-input').value.trim()
+    const genre = document.getElementById('genre-select').value
+    
+    const filters = {}
+    if (search) filters.search = search
+    if (genre) filters.genre = genre
+    
+    const products = await getProducts(filters)
+    renderProducts(products)
+  } catch (err) {
+    console.error('Error applying search filter:', err)
+    renderProducts([])
+  }
 }

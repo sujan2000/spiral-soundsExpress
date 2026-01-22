@@ -1,5 +1,4 @@
 import { supabase } from '../db/db.js';
-import 'dotenv/config';
 
 /* Register User */
 export async function registerUser(req, res) {
@@ -24,6 +23,18 @@ export async function registerUser(req, res) {
 
     if (error) throw error;
 
+    // Add user to users table
+    const { error: dbError } = await supabase
+      .from('users')
+      .insert([{
+        id: data.user.id,
+        name,
+        email,
+        username,
+      }]);
+
+    if (dbError) throw dbError;
+
     res.status(201).json({ message: 'User registered', userId: data.user.id });
   } catch (err) {
     console.error('Registration error:', err.message);
@@ -43,9 +54,7 @@ export async function loginUser(req, res) {
     // Sign in with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
-    if (error) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    if (error) throw error;
 
     // Set HTTP-only cookie
     res.cookie('sb_token', data.session.access_token, {
@@ -55,18 +64,29 @@ export async function loginUser(req, res) {
       sameSite: 'lax',
     });
 
+    // Store session in express-session
+    req.session.userId = data.user.id;
+    req.session.user = data.user;
+
     res.json({ message: 'Logged in', user: data.user });
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).json({ error: 'Login failed', details: err.message });
+    res.status(401).json({ error: 'Invalid credentials', details: err.message });
   }
 }
 
 /* Logout User */
 export async function logoutUser(req, res) {
   try {
+    // Clear session and cookies
     res.clearCookie('sb_token');
-    res.json({ message: 'Logged out successfully' });
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destroy error:', err.message);
+        return res.status(500).json({ error: 'Logout failed', details: err.message });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
   } catch (err) {
     console.error('Logout error:', err.message);
     res.status(500).json({ error: 'Logout failed', details: err.message });

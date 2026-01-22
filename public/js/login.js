@@ -4,7 +4,7 @@ const errorMessage = document.getElementById('error-message')
 signinForm.addEventListener('submit', async (e) => {
   e.preventDefault() // Prevent form from reloading the page
 
-  const username = document.getElementById('signin-username').value.trim()
+  const email = document.getElementById('signin-username').value.trim()
   const password = document.getElementById('signin-password').value.trim()
   const submitBtn = signinForm.querySelector('button')
 
@@ -18,7 +18,7 @@ signinForm.addEventListener('submit', async (e) => {
         'Content-Type': 'application/json'
       },
       credentials: 'include', 
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     })
 
     const data = await res.json()

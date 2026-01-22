@@ -73,12 +73,12 @@ function renderCartItems(items, cartList) {
     const li = document.createElement('li')
     li.className = 'cart-item'
 
-    const itemTotal = item.price * item.quantity
+    const itemTotal = item.products.price * item.quantity
 
     li.innerHTML = `
       <div>
-        <strong>${item.title}: </strong>
-        <button data-id="${item.cartItemId}" class="remove-btn">🗑️</button>
+        <strong>${item.products.title}: </strong>
+        <button data-id="${item.id}" class="remove-btn">🗑️</button>
       </div>
       <span>× ${item.quantity} = $${itemTotal.toFixed(2)}</span>
     `
@@ -88,7 +88,7 @@ function renderCartItems(items, cartList) {
 }
 
 function updateCartTotal(items, cartTotal, checkoutBtn) {
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = items.reduce((sum, item) => sum + item.products.price * item.quantity, 0)
   cartTotal.innerHTML = `Total: $${total.toFixed(2)}`
 
   if (total <= 0) {
@@ -106,6 +106,7 @@ export async function removeItem(itemId, dom) {
 
     if (res.status === 204) {
       await loadCart(dom)
+      await updateCartIcon()
     } else {
       console.error('Error removing item:', await res.text())
     }
@@ -123,6 +124,7 @@ export async function removeAll(dom) {
 
     if (res.status === 204) {
       await loadCart(dom)
+      await updateCartIcon()
     } else {
       console.error('Error clearing cart:', await res.text())
     }

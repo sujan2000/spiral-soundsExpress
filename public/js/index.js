@@ -9,30 +9,34 @@ document.getElementById('logout-btn').addEventListener('click', logout)
 // ===== Initial Load =====
 
 async function init() {
-  populateGenreSelect()
-  const products = await getProducts()
-  const name = await checkAuth()
-  renderGreeting(name)
-  renderProducts(products)
-  showHideMenuItems(name)
-  if (name) {
-    await updateCartIcon()
+  try {
+    await populateGenreSelect()
+    const products = await getProducts()
+    const name = await checkAuth()
+    renderGreeting(name)
+    renderProducts(products)
+    showHideMenuItems(name)
+    if (name) {
+      await updateCartIcon()
+    }
+  } catch (err) {
+    console.error('Error during initialization:', err)
   }
 }
 
 init()
 
-
 // ===== Event Listeners =====
 
 document.getElementById('search-input').addEventListener('input', (e) => {
-  e.preventDefault()
   applySearchFilter()
 })
 
 // prevent 'enter' from submitting
-document.getElementById('search-input').addEventListener('submit', (e) => {
-  e.preventDefault()
+document.getElementById('search-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+  }
 })
 
 document.querySelector('form').addEventListener('submit', (e) => {
@@ -41,10 +45,14 @@ document.querySelector('form').addEventListener('submit', (e) => {
 })
 
 document.getElementById('genre-select').addEventListener('change', async (e) => {
-  const genre = e.target.value
-  const products = await getProducts(genre ? { genre } : {})
-  renderProducts(products)
+  try {
+    const genre = e.target.value
+    // Clear search when changing genre
+    document.getElementById('search-input').value = ''
+    const products = await getProducts(genre ? { genre } : {})
+    renderProducts(products)
+  } catch (err) {
+    console.error('Error changing genre:', err)
+    renderProducts([])
+  }
 })
-
-
- 

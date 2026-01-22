@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import 'dotenv/config';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase } from '../db/db.js';
 
 export const requireAuth = async (req, res, next) => {
   try {
@@ -17,7 +11,7 @@ export const requireAuth = async (req, res, next) => {
     req.user = data.user; // attach Supabase user to request
     next();
   } catch (err) {
-    console.error('Auth middleware error:', err);
-    res.status(500).json({ error: 'Authentication failed' });
+    console.error('Auth middleware error:', err.message);
+    res.status(500).json({ error: 'Authentication failed', details: err.message });
   }
 };
