@@ -25,7 +25,10 @@ export function addBtnListeners() {
 
 export async function updateCartIcon() {
   try {
-    const res = await fetch('/api/cart/cart-count')
+    const res = await fetch('/api/cart/cart-count', {
+      method: 'GET',
+      credentials: 'include'
+    })
     const obj = await res.json()
     const totalItems = obj.totalItems
 
