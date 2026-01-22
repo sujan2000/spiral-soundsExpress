@@ -4,13 +4,15 @@ import {
   getCartCount, 
   getAll, 
   deleteItem, 
-  deleteAll } from '../controllers/cartController.js'
+  deleteAll,
+  validateAddToCart,
+  validateDeleteItem } from '../controllers/cartController.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 export const cartRouter = express.Router()
 
-cartRouter.post('/add', requireAuth, addToCart) 
+cartRouter.post('/add', requireAuth, validateAddToCart, addToCart) 
 cartRouter.get('/cart-count', requireAuth, getCartCount)
 cartRouter.get('/', requireAuth, getAll) 
 cartRouter.delete('/all', requireAuth, deleteAll) 
-cartRouter.delete('/:itemId', requireAuth, deleteItem) 
+cartRouter.delete('/:itemId', requireAuth, validateDeleteItem, deleteItem) 
