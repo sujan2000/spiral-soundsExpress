@@ -1,6 +1,7 @@
-import express from 'express'
-import { getCurrentUser } from '../controllers/meController.js'
+import express from 'express';
+import { getCurrentUser } from '../controllers/meController.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
-export const meRouter = express.Router()
+export const meRouter = express.Router();
 
-meRouter.get('/', getCurrentUser) 
+meRouter.get('/', requireAuth, getCurrentUser);

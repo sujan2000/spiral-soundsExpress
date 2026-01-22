@@ -1,7 +1,41 @@
-import express from 'express'
-import { getGenres, getProducts } from '../controllers/productsController.js'
+import express from 'express';
+import { supabase } from '../db/db.js';
 
-export const productsRouter = express.Router()
+const productsRouter = express.Router();
 
-productsRouter.get('/genres', getGenres)
-productsRouter.get('/', getProducts)
+// Get all products
+productsRouter.get('/', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*');
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    console.error('Error fetching products:', err.message);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Get product by ID
+productsRouter.get('/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', parseInt(req.params.id))
+      .single();
+    
+    if (error || !data) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching product:', err.message);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+export { productsRouter };

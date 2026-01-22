@@ -1,52 +1,59 @@
-import { getDBConnection } from '../db/db.js'
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// GET /api/products/genres
 export async function getGenres(req, res) {
-
   try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('genre');
 
-    const db = await getDBConnection()
-    const genreRows = await db.query('SELECT DISTINCT genre FROM products')
-    const genres = genreRows.map(row => row.genre)
-    res.json(genres)
+    if (error) {
+      console.error('Supabase error:', error.message);
+      return res.status(500).json({ error: 'Failed to fetch genres' });
+    }
 
+    // Remove duplicates & nulls
+    const genres = [...new Set(data.map(g => g.genre).filter(Boolean))];
+
+    res.json(genres);
   } catch (err) {
-
-    res.status(500).json({ error: 'Failed to fetch genres', details: err.message })
-
+    res.status(500).json({ error: 'Failed to fetch genres', details: err.message });
   }
 }
 
+// GET /api/products?genre=&search=
 export async function getProducts(req, res) {
   try {
-    const db = await getDBConnection();
-
-    let query = 'SELECT * FROM products';
-    const params = [];
-
     const { genre, search } = req.query;
 
-    if (genre) {
-      query += ' WHERE genre = $1';
-      params.push(genre);
+    let query = supabase.from('products').select('*');
 
-    } else if (search) {
-      query += `
-        WHERE title ILIKE $1
-        OR artist ILIKE $2
-        OR genre ILIKE $3
-      `;
-      const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern);
+    if (genre) {
+      query = query.eq('genre', genre);
     }
 
-    const { rows: products } = await db.query(query, params);
+    if (search) {
+      const searchPattern = `%${search}%`;
+      query = query.or(
+        `title.ilike.${searchPattern},artist.ilike.${searchPattern},genre.ilike.${searchPattern}`
+      );
+    }
+
+    const { data: products, error } = await query;
+
+    if (error) {
+      console.error('Supabase error:', error.message);
+      return res.status(500).json({ error: 'Failed to fetch products' });
+    }
 
     res.json(products);
-
   } catch (err) {
-    res.status(500).json({
-      error: 'Failed to fetch products',
-      details: err.message
-    });
+    res.status(500).json({ error: 'Failed to fetch products', details: err.message });
   }
 }

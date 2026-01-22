@@ -1,15 +1,11 @@
-import 'dotenv/config'; // automatically loads .env
-import pkg from 'pg';
-const { Pool } = pkg;
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  family: 4,
-});
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-export async function getDBConnection() {
-  return pool;
-}
+export { supabase };
 
 

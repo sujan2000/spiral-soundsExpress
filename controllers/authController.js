@@ -1,109 +1,74 @@
-import validator from 'validator'
-import { getDBConnection } from '../db/db.js'
-import bcrypt from 'bcryptjs'
-
+import { supabase } from '../db/db.js';
+import 'dotenv/config';
 
 /* Register User */
 export async function registerUser(req, res) {
+  const { email, password, username, name } = req.body;
 
-  let { name, email, username, password } = req.body
-
-  if (!name || !email || !username || !password) {
-
-    return res.status(400).json({ error: 'All fields are required.' })
-
+  if (!email || !password || !username || !name) {
+    return res.status(400).json({ error: 'All fields are required' });
   }
-
-  name = name.trim()
-  email = email.trim()
-  username = username.trim()
 
   if (!/^[a-zA-Z0-9_-]{1,20}$/.test(username)) {
-
-    return res.status(400).json(
-      { error: 'Username must be 1–20 characters, using letters, numbers, _ or -.' }
-    )
-  }
-
-  if (!validator.isEmail(email)) {
-
-    return res.status(400).json({ error: 'Invalid email format' })
-
+    return res.status(400).json({ error: 'Username must be 1–20 characters' });
   }
 
   try {
+    // Create user in Supabase Auth
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: { username, name },
+      email_confirm: true,
+    });
 
-    const db = await getDBConnection()
+    if (error) throw error;
 
-    const existing = await db.query('SELECT id FROM users WHERE email = ? OR username = ?', [email, username])
-
-    if (existing) {
-      return res.status(400).json({ error: 'Email or username already in use.' })
-    }
-
-    const hashed = await bcrypt.hash(password, 10)
-
-    const result = await db.query('INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)', [name, email, username, hashed])
-
-    req.session.userId = result.lastID
-
-    res.status(201).json({ message: 'User registered' })
+    res.status(201).json({ message: 'User registered', userId: data.user.id });
   } catch (err) {
-
     console.error('Registration error:', err.message);
-    res.status(500).json({ error: 'Registration failed. Please try again.' })
-
+    res.status(500).json({ error: 'Registration failed', details: err.message });
   }
-
 }
-
 
 /* Login User */
 export async function loginUser(req, res) {
+  const { email, password } = req.body;
 
-  let { username, password } = req.body
-
-  if (!username || !password) {
-    return res.status(400).json({ error: 'All fields are required' })
+  if (!email || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
   }
 
-  username = username.trim()
-
   try {
-    const db = await getDBConnection()
-
-    const user = await db.query('SELECT * FROM users WHERE username = ?', [username])
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' })
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password)
+    // Set HTTP-only cookie
+    res.cookie('sb_token', data.session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
 
-    if (!isValid) {
-
-      return res.status(401).json({ error: 'Invalid credentials' })
-
-    }
-
-    req.session.userId = user.id
-    res.json({ message: 'Logged in' })
-
+    res.json({ message: 'Logged in', user: data.user });
   } catch (err) {
-    console.error('Login error:', err.message)
-    res.status(500).json({ error: 'Login failed. Please try again.' })
+    console.error('Login error:', err.message);
+    res.status(500).json({ error: 'Login failed', details: err.message });
   }
 }
 
-
 /* Logout User */
-
 export async function logoutUser(req, res) {
-
-  req.session.destroy(() => {
-
-    res.json({ message: 'Logged out' })
-
-  })
-
+  try {
+    res.clearCookie('sb_token');
+    res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    console.error('Logout error:', err.message);
+    res.status(500).json({ error: 'Logout failed', details: err.message });
+  }
 }

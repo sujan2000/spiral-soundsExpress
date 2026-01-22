@@ -1,32 +1,40 @@
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
+import { vinyl } from '../data.js';
 
-import { getDBConnection } from '../db/db.js'
-import { vinyl } from '../data.js'
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function seedTable() {
-    const db = await getDBConnection();
-
     try {
-        // Start a transaction
-        await db.query('BEGIN');
+        const records = vinyl.map(
+            ({ title, artist, price, image, year, genre, stock }) => ({
+                title,
+                artist,
+                price,
+                image,
+                year,
+                genre,
+                stock
+            })
+        );
 
-        for (const { title, artist, price, image, year, genre, stock } of vinyl) {
-            await db.query(
-                `
-        INSERT INTO products (title, artist, price, image, year, genre, stock)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (title, artist) DO NOTHING
-        `,
-                [title, artist, price, image, year, genre, stock]
-            );
-        }
+        const { error } = await supabase
+            .from('products')
+            .upsert(records, {
+                onConflict: 'title,artist,year',
+                ignoreDuplicates: true
+            });
 
-        // Commit transaction
-        await db.query('COMMIT');
-        console.log('All records inserted successfully');
+        if (error) throw error;
+
+        console.log('✅ All records inserted successfully');
 
     } catch (error) {
-        await db.query('ROLLBACK');
-        console.log('Error inserting data:', error.message);
+        console.error('❌ Error inserting data:', error.message);
     }
 }
-seedTable()
+
+seedTable();
