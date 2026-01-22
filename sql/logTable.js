@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import 'dotenv/config';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase } from '../db/db.js';
 
 /**
  * Log table data
@@ -37,8 +31,15 @@ export async function logTable(tableName) {
       return;
     }
 
-    console.log(`\n📋 ${tableName.toUpperCase()} table data:`)
+    console.log(`\n📋 ${tableName.toUpperCase()} table data (${data.length} records):`)
     console.table(data);
+
+    // Additional info for products
+    if (tableName === 'products') {
+      const genres = [...new Set(data.map(p => p.genre).filter(Boolean))];
+      console.log(`\n🎵 Unique Genres Found: ${genres.length}`);
+      console.log(genres);
+    }
 
   } catch (err) {
     console.error('❌ Unexpected error:', err.message);
