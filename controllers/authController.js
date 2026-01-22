@@ -1,60 +1,132 @@
 import { supabase } from '../db/db.js';
+import { body, validationResult } from 'express-validator';
+import xss from 'xss';
+
+// Input validation middleware
+export const validateRegister = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain uppercase, lowercase, and number'),
+  body('username')
+    .matches(/^[a-zA-Z0-9_-]{1,20}$/)
+    .withMessage('Username must be 1-20 characters (alphanumeric, underscore, hyphen)'),
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Name must be 2-50 characters')
+    .matches(/^[a-zA-Z\s'-]+$/)
+    .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes'),
+];
+
+export const validateLogin = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email address'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be provided'),
+];
+
+// Sanitize user input to prevent XSS
+const sanitizeInput = (str) => xss(str, { whiteList: {}, stripIgnoredTag: true });
 
 /* Register User */
 export async function registerUser(req, res) {
-  const { email, password, username, name } = req.body;
-
-  if (!email || !password || !username || !name) {
-    return res.status(400).json({ error: 'All fields are required' });
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
   }
 
-  if (!/^[a-zA-Z0-9_-]{1,20}$/.test(username)) {
-    return res.status(400).json({ error: 'Username must be 1–20 characters' });
-  }
+  let { email, password, username, name } = req.body;
+
+  // Sanitize inputs
+  email = sanitizeInput(email).trim();
+  username = sanitizeInput(username).trim();
+  name = sanitizeInput(name).trim();
 
   try {
-    // Create user in Supabase Auth
+    // Create user in Supabase Auth using admin API with auto-confirmation
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
       user_metadata: { username, name },
-      email_confirm: true,
+      email_confirm: true // Auto-confirm email
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase signup error:', error.message);
+      throw error;
+    }
+
+    if (!data.user) {
+      return res.status(400).json({ error: 'Failed to create user account' });
+    }
 
     // Add user to users table
-    const { error: dbError } = await supabase
-      .from('users')
-      .insert([{
-        id: data.user.id,
-        name,
-        email,
-        username,
-      }]);
+    try {
+      await supabase
+        .from('users')
+        .insert([{
+          id: data.user.id,
+          name,
+          email,
+          username,
+        }]);
+    } catch (dbErr) {
+      console.error('Database insert error:', dbErr.message);
+      // User created but couldn't insert to users table - still return success
+    }
 
-    if (dbError) throw dbError;
-
-    res.status(201).json({ message: 'User registered', userId: data.user.id });
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      userId: data.user.id,
+      user: {
+        email: data.user.email,
+        username
+      }
+    });
   } catch (err) {
     console.error('Registration error:', err.message);
-    res.status(500).json({ error: 'Registration failed', details: err.message });
+    res.status(500).json({ error: err.message || 'Registration failed' });
   }
 }
 
 /* Login User */
 export async function loginUser(req, res) {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
   }
+
+  let { email, password } = req.body;
+
+  // Sanitize inputs
+  email = sanitizeInput(email).trim();
 
   try {
     // Sign in with Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password 
+    });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase auth error:', error.message);
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    if (!data.user || !data.session) {
+      return res.status(401).json({ error: 'Login failed - no session created' });
+    }
 
     // Set HTTP-only cookie
     res.cookie('sb_token', data.session.access_token, {
@@ -68,10 +140,16 @@ export async function loginUser(req, res) {
     req.session.userId = data.user.id;
     req.session.user = data.user;
 
-    res.json({ message: 'Logged in', user: data.user });
+    res.json({ 
+      message: 'Logged in successfully', 
+      user: {
+        id: data.user.id,
+        email: data.user.email
+      }
+    });
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(401).json({ error: 'Invalid credentials', details: err.message });
+    res.status(500).json({ error: 'Login failed', details: err.message });
   }
 }
 

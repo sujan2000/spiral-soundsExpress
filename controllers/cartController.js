@@ -1,14 +1,32 @@
 import { supabase } from '../db/db.js';
+import { body, param, validationResult } from 'express-validator';
+
+// Validation middleware
+export const validateAddToCart = [
+  body('productId')
+    .isInt({ min: 1 })
+    .withMessage('Product ID must be a positive integer'),
+];
+
+export const validateDeleteItem = [
+  param('itemId')
+    .isUUID()
+    .withMessage('Item ID must be a valid UUID'),
+];
 
 const getUserId = (req) => req.user?.id;
 
 export async function addToCart(req, res) {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+
   try {
     const productId = parseInt(req.body.productId, 10);
-
-    if (isNaN(productId)) return res.status(400).json({ error: 'Invalid product ID' });
-
     const userId = getUserId(req);
+    
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
     // Check if item already in cart
@@ -90,11 +108,16 @@ export async function getAll(req, res) {
 }
 
 export async function deleteItem(req, res) {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+
   try {
-    const itemId = parseInt(req.params.itemId, 10);
+    const itemId = req.params.itemId; // Keep as UUID string, don't parse as int
     const userId = getUserId(req);
 
-    if (isNaN(itemId)) return res.status(400).json({ error: 'Invalid item ID' });
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
     const { error } = await supabase
