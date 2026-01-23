@@ -54,22 +54,12 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   }
 }))
+app.use(express.static('public'))
 
-
-app.use(express.static('./public'));
-
-
-
-// API + aliases
 app.use('/api/products', productsRouter);
-app.use('/products', productsRouter);
-
+app.use('/api/auth/me', meRouter);
 app.use('/api/auth', authRouter);
-app.use('/auth', authRouter);
-
 app.use('/api/cart', cartRouter);
-app.use('/cart', cartRouter);
-
 
 export default app;
 
