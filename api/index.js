@@ -4,15 +4,16 @@ import hpp from 'hpp';
 import rateLimit from 'express-rate-limit'
 import session from 'express-session'
 import cookieParser from 'cookie-parser';
-
 import { productsRouter } from '../routes/products.js';
 import { authRouter } from '../routes/auth.js';
 import { meRouter } from '../routes/me.js';
 import { cartRouter } from '../routes/cart.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import dotenv from 'dotenv';
 
 dotenv.config();
-
 const app = express();
 const secret = process.env.SPIRAL_SESSION_SECRET;
 
@@ -21,7 +22,6 @@ app.use(helmet());
 app.use(hpp());
 
 app.set('trust proxy', 1);
-
 // Rate Limiting - Prevent DDoS attacks
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -42,10 +42,7 @@ const authLimiter = rateLimit({
 })
 
 app.use(express.json({ limit: '10kb' }));
-
 app.use(limiter)
-
-
 app.use(cookieParser(secret));
 
 app.use(session({
@@ -59,15 +56,23 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   }
 }))
+app.use(express.static('public'));
 
-
-app.use(express.static('public'))
-
-
+// API + aliases
 app.use('/api/products', productsRouter);
-app.use('/api/auth/me', meRouter);
+app.use('/products', productsRouter);
+
 app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
+
 app.use('/api/cart', cartRouter);
+app.use('/cart', cartRouter);
+
+// SPA fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 
 export default app;
 
