@@ -2,15 +2,16 @@ import express from 'express'
 import helmet from 'helmet'
 import hpp from 'hpp'
 import rateLimit from 'express-rate-limit'
+import session from 'express-session'
+import cookieParser from 'cookie-parser';
+
 import { productsRouter } from './routes/products.js'
 import { authRouter } from './routes/auth.js'
 import { meRouter } from './routes/me.js'
 import { cartRouter } from './routes/cart.js'
-import session from 'express-session'
-import cookieParser from 'cookie-parser';
 import dotenv from "dotenv";
-dotenv.config();
 
+dotenv.config();
 
 const app = express()
 const PORT = process.env.PORT || 8000
@@ -59,6 +60,7 @@ app.use(session({
 }))
 
 app.use(express.static('public'))
+
 
 app.use('/api/products', productsRouter)
 
