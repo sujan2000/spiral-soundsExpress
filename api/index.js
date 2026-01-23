@@ -20,7 +20,8 @@ const secret = process.env.SPIRAL_SESSION_SECRET;
 app.use(helmet());
 app.use(hpp());
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
+
 // Rate Limiting - Prevent DDoS attacks
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
