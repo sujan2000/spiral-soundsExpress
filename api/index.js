@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit'
 import session from 'express-session'
 import cookieParser from 'cookie-parser';
 
+import FileStore from 'session-file-store';
+
 import { productsRouter } from '../routes/products.js';
 import { authRouter } from '../routes/auth.js';
 import { meRouter } from '../routes/me.js';
@@ -44,10 +46,13 @@ const authLimiter = rateLimit({
 app.use(express.json({ limit: '10kb' }));
 
 app.use(limiter)
+app.use(authLimiter)
 
+const FileStoreSession = FileStore(session);
 app.use(cookieParser(secret));
 
 app.use(session({
+  store: new FileStoreSession({}),
   secret: secret,
   resave: false,
   saveUninitialized: false,
