@@ -8,8 +8,6 @@ import { productsRouter } from '../routes/products.js';
 import { authRouter } from '../routes/auth.js';
 import { meRouter } from '../routes/me.js';
 import { cartRouter } from '../routes/cart.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import dotenv from 'dotenv';
 
@@ -67,11 +65,6 @@ app.use('/auth', authRouter);
 
 app.use('/api/cart', cartRouter);
 app.use('/cart', cartRouter);
-
-// SPA fallback
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 
 export default app;
