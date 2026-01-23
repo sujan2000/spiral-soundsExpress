@@ -1,8 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
-import rateLimit from 'express-rate-limit';
-import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 
